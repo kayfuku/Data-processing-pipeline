@@ -1,8 +1,6 @@
 package edu.usfca.dataflow.transforms;
 
 import edu.usfca.dataflow.utils.CommonUtils;
-import edu.usfca.dataflow.utils.CommonUtils.StrPrinter2;
-import edu.usfca.dataflow.utils.CommonUtils.StrPrinter5;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.*;
 import org.slf4j.Logger;
@@ -148,7 +146,6 @@ public class SuspiciousIDs {
         .and(tooManyGeosDevIds).and(tooManyBidLogsDevIds) // PCList<DeviceId>
       .apply(Flatten.pCollections()); // PC<DeviceId>
 
-    suspiciousDevIds.apply(new StrPrinter2("the six ids"));
 
     return suspiciousDevIds;
   }

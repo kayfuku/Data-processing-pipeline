@@ -1,34 +1,17 @@
 package edu.usfca.dataflow.jobs1;
 
-import static edu.usfca.dataflow.transforms.SuspiciousIDs.getSuspiciousIDs;
-
-import com.google.openrtb.OpenRtb;
-import com.google.protobuf.InvalidProtocolBufferException;
-import edu.usfca.dataflow.utils.BidLogUtils;
-import edu.usfca.dataflow.utils.DeviceProfileUtils;
-import edu.usfca.dataflow.utils.DeviceProfileUtils.CombineDeviceProfiles;
-import edu.usfca.dataflow.utils.IOUtils;
-import edu.usfca.protobuf.Bid;
-import edu.usfca.protobuf.Bid.BidLog;
+import edu.usfca.dataflow.utils.*;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.io.TFRecordIO;
+import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.transforms.*;
-import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.TypeDescriptor;
-import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.usfca.dataflow.MyOptions;
-import edu.usfca.dataflow.transforms.AppProfiles.ComputeAppProfiles;
-import edu.usfca.dataflow.utils.PathConfigs;
-import edu.usfca.protobuf.Common.DeviceId;
-import edu.usfca.protobuf.Profile.AppProfile;
-import edu.usfca.protobuf.Profile.DeviceProfile;
 
-public class BidLogJob {
-  private static final Logger LOG = LoggerFactory.getLogger(BidLogJob.class);
+public class CountWordsJob {
+  private static final Logger LOG = LoggerFactory.getLogger(CountWordsJob.class);
 
   /**
    * ---------------------------------------------------------------
@@ -104,65 +87,50 @@ public class BidLogJob {
    * pipeline. Further instructions will be provided after you complete Task A.
    */
 
-  public static class BidLog2DeviceProfile extends PTransform<PCollection<byte[]>, PCollection<DeviceProfile>> {
+  public static class Log2CommentText extends PTransform<PCollection<String>, PCollection<String>> {
 
     @Override
-    public PCollection<DeviceProfile> expand(PCollection<byte[]> bidLogBinary) {
-      // TODO: Your first step should be to decode "byte[]" using <proto>.parseFrom to obtain proto messages.
-      // Note that the input PCollection contains BidLog protos (but serializeD).
+    public PCollection<String> expand(PCollection<String> input) {
 
-      PCollection<DeviceProfile> deviceProfiles = bidLogBinary
-        .apply(ParDo.of(new DoFn<byte[], BidLog>() {
+      PCollection<String> commentTexts = input // PC<String>
+        .apply(ParDo.of(new DoFn<String, String>() {
           @ProcessElement
-          public void anyName(@Element byte[] bytes, OutputReceiver<BidLog> out) {
-            try {
-              BidLog bidLogs = BidLog.parseFrom(bytes);
-              out.output(bidLogs);
-
-            } catch (InvalidProtocolBufferException e) {
-              e.printStackTrace();
-            }
+          public void parse(@Element String jsonLogAsLine, OutputReceiver<String> out) {
+            String commentText = LogParser.getComment(jsonLogAsLine);
+            out.output(commentText);
           }
-        })) // PC<BidLog>
-        .apply(Filter.by((ProcessFunction<BidLog, Boolean>) bidLog -> BidLogUtils.isValid(bidLog))) // PC<BidLog>
-        .apply(ParDo.of(new DoFn<BidLog, KV<DeviceId, DeviceProfile>>() {
-          @ProcessElement
-          public void process(ProcessContext c) {
-            DeviceProfile dp = BidLogUtils.getDeviceProfile(c.element());
-            c.output(KV.of(dp.getDeviceId(), dp));
-          }
-        })) // PC<KV<DeviceId, DeviceProfile>>
-        .apply(Combine.perKey(new CombineDeviceProfiles())) // PC<KV<DeviceId, DeviceProfile>>
-        .apply(Values.create()); // PC<DeviceProfile>
+        })); // PC<String>
 
-      return deviceProfiles;
+      return commentTexts;
     }
   }
 
   public static void execute(MyOptions options) {
     LOG.info("Options: {}", options.toString());
-    // ----------------------------------------------------------------------
-    // TODO: You should NOT change what's in PathConfigs class, but DO take a look to understand how input/output paths
-    // are decided in this project. Likewise, DO take a look at "MyOptions" class.
     final PathConfigs config = PathConfigs.of(options);
     Pipeline p = Pipeline.create(options);
 
-    // 1. Read BidLog data from TFRecord files, create DeviceProfiles, and return merged DeviceProfiles.
-    PCollection<byte[]> rawData = p.apply(TFRecordIO.read().from(config.getReadPathToBidLog()));
-    PCollection<DeviceProfile> deviceProfiles = rawData.apply("BidLog2DeviceProfile", new BidLog2DeviceProfile());
+    // 1. Read Reddit comment data.
+    PCollection<String> rawData = p.apply("Read", TextIO.read().from(config.getReadPathToRedditComment()));
+    PCollection<String> commentTexts = rawData.apply("Parse", new Log2CommentText());
 
-    // 2. Obtain AppProfiles.
-    PCollection<AppProfile> appProfiles = deviceProfiles.apply("ComputeAppProfiles", new ComputeAppProfiles());
+    commentTexts.apply(new CommonUtils.StrPrinter1("comment text"));
 
-    // 3. Suspicious users (IDs).
-    PCollection<DeviceId> suspiciousUsers = getSuspiciousIDs(deviceProfiles, appProfiles, //
-        options.getUserCountThreshold(), options.getAppCountThreshold(), options.getGeoCountThreshold(),
-        options.getBidLogCountThreshold());
 
-    // 4. Ouput.
-    IOUtils.encodeB64AndWrite(deviceProfiles, config.getWritePathToDeviceProfile());
-    IOUtils.encodeB64AndWrite(appProfiles, config.getWritePathToAppProfile());
-    IOUtils.encodeB64AndWrite(suspiciousUsers, config.getWritePathToSuspiciousUser());
+
+
+//    // 2. Obtain AppProfiles.
+//    PCollection<AppProfile> appProfiles = deviceProfiles.apply("ComputeAppProfiles", new ComputeAppProfiles());
+//
+//    // 3. Suspicious users (IDs).
+//    PCollection<DeviceId> suspiciousUsers = getSuspiciousIDs(deviceProfiles, appProfiles, //
+//        options.getUserCountThreshold(), options.getAppCountThreshold(), options.getGeoCountThreshold(),
+//        options.getBidLogCountThreshold());
+//
+//    // 4. Ouput.
+//    IOUtils.encodeB64AndWrite(deviceProfiles, config.getWritePathToDeviceProfile());
+//    IOUtils.encodeB64AndWrite(appProfiles, config.getWritePathToAppProfile());
+//    IOUtils.encodeB64AndWrite(suspiciousUsers, config.getWritePathToSuspiciousUser());
 
     // 4. Output (write to GCS).
     // For convenience, we'll use Base64 encoding.

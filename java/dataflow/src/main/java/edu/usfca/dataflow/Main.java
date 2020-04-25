@@ -1,6 +1,7 @@
 package edu.usfca.dataflow;
 
 
+import com.google.api.services.bigquery.model.TableReference;
 import org.apache.beam.runners.dataflow.DataflowRunner;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -8,9 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.api.services.bigquery.model.TableReference;
-
-import edu.usfca.dataflow.jobs1.BidLogJob;
+import edu.usfca.dataflow.jobs1.CountWordsJob;
 import edu.usfca.dataflow.jobs2.PredictionJob;
 
 /**
@@ -21,7 +20,7 @@ public class Main {
 
   // TODO: Make sure you change the following four to your own settings.
   public final static String GCP_PROJECT_ID = "smart-athlete-268502"; // <- TODO change this to your GCP project ID.
-  public final static String GCS_BUCKET = "gs://cs686-lec20-setup-bucket"; // <- TODO change this to your bucket (that you used
+  public final static String GCS_BUCKET = "gs://cs686-test-bucket"; // <- TODO change this to your bucket (that you used
                                                                  // for project 4).
   public final static String REGION = "us-west1"; // Don't change this.
 
@@ -35,7 +34,7 @@ public class Main {
   // It's recommended that you provide the absolute path here (not relative path)!
   // Note that, in this directory, "input/model" directories must be found (or the job will throw an exception).
   public final static String LOCAL_PATH_TO_RESOURCE_DIR =
-      "/Users/kei/Documents/USF/MSCS/CS686_DataProcessingInCloud/data/project5-actual";
+      "/Users/kei/Documents/USF/MSCS/CS686_DataProcessingInCloud/data/reddit_data";
 
   // TODO: Change the following to the GCS path that contains the resource files.
   // Note that (when you run jobs on GCP) you can override this by feeding the command-line argument.
@@ -50,9 +49,9 @@ public class Main {
 
     final String job = options.getJob();
     switch (job) {
-      case "bidLogJob": // Pipeline #1 for Task A
+      case "countWordsJob": // Pipeline #1 for Task A
         options = setDefaultValues(options);
-        BidLogJob.execute(options);
+        CountWordsJob.execute(options);
         break;
 
       case "predictionJob": // Pipeline #2 for Task B

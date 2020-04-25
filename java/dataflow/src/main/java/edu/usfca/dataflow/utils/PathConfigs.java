@@ -29,8 +29,9 @@ public class PathConfigs {
     return new PathConfigs(Main.LOCAL_PATH_TO_RESOURCE_DIR);
   }
 
-  public String getReadPathToBidLog() {
-    return PATH_TO_RESOURCE_ROOT + "/input/bidlog*.tfrecord.gz";
+  public String getReadPathToRedditComment() {
+//    return PATH_TO_RESOURCE_ROOT + "/2013/RC_2013-04.bz2";
+    return PATH_TO_RESOURCE_ROOT + "/sample_data.json";
   }
 
   public String getWritePathToDeviceProfile() {
