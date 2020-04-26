@@ -13,6 +13,8 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 
+import java.util.Arrays;
+
 public class CommonUtils {
 
     public static class StrPrinter1 extends PTransform<PCollection<String>, PDone> {
@@ -27,6 +29,25 @@ public class CommonUtils {
                 @ProcessElement public void process(ProcessContext c) {
 
                     System.out.format("[%s] %s\n", prefix, c.element());
+
+                }
+            }));
+            return PDone.in(input.getPipeline());
+        }
+    }
+
+    public static class StrPrinter2 extends PTransform<PCollection<String[]>, PDone> {
+        final String prefix;
+
+        public StrPrinter2(String prefix) {
+            this.prefix = prefix;
+        }
+
+        @Override public PDone expand(PCollection<String[]> input) {
+            input.apply(ParDo.of(new DoFn<String[], Void>() {
+                @ProcessElement public void process(ProcessContext c) {
+
+                    System.out.format("[%s] %s\n", prefix, Arrays.toString(c.element()));
 
                 }
             }));

@@ -25,7 +25,7 @@ import edu.usfca.protobuf.Event.PurchaseEvent;
 import edu.usfca.protobuf.Event.PurchaseEvent.Store;
 
 /**
- * Parse JSON to get "body" field (comment text).
+ * Parse JSON to get "body" field value (comment text).
  */
 public class LogParser {
 

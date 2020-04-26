@@ -49,15 +49,15 @@ public class Main {
 
     final String job = options.getJob();
     switch (job) {
-      case "countWordsJob": // Pipeline #1 for Task A
+      case "countWordsJob": // Generate N grams and count words.
         options = setDefaultValues(options);
         CountWordsJob.execute(options);
         break;
 
-      case "predictionJob": // Pipeline #2 for Task B
-        options = setDefaultValues(options);
-        PredictionJob.execute(options);
-        break;
+//      case "predictionJob":
+//        options = setDefaultValues(options);
+//        PredictionJob.execute(options);
+//        break;
 
       default: // Should not be reached.
         System.out.println("unknown job flag: " + job);
