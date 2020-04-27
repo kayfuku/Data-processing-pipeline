@@ -4,12 +4,17 @@ import edu.usfca.dataflow.utils.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.usfca.dataflow.MyOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class CountWordsJob {
   private static final Logger LOG = LoggerFactory.getLogger(CountWordsJob.class);
@@ -92,6 +97,9 @@ public class CountWordsJob {
   }
 
 
+  // ??
+  Map<String, Map<String, Integer>> wordToNextWordsCount = new HashMap<>();
+
   public static void execute(MyOptions options) {
     LOG.info("Options: {}", options.toString());
     final PathConfigs config = PathConfigs.of(options);
@@ -106,11 +114,25 @@ public class CountWordsJob {
     // 2. Generate N grams.
     PCollection<String[]> ngrams = commentTexts.apply("GetNGram", new GetNGram(2));
 
-    // Warning about coders!
+    // Warning about coders! => String[] ??
 //    ngrams.apply(new CommonUtils.StrPrinter2("ngram"));
 
-    // 3. Count words.
-    
+    // 3. Count words. ??
+    PCollectionView<Map<String, KV<String, Long>>> wordToNextWordsCountMapView = ngrams // PC<String[]>
+      .apply(Count.perElement()) // PC<String[], Long>
+      .apply(ParDo.of(new DoFn<KV<String[], Long>, KV<String, KV<String, Long>>>() {
+        @ProcessElement
+        public void parse(@Element KV<String[], Long> input, OutputReceiver<KV<String, KV<String, Long>>> out) {
+          String word = input.getKey()[0];
+          String nextWord = input.getKey()[1];
+          long count = input.getValue();
+
+          out.output(KV.of(word, KV.of(nextWord, count)));
+        }
+      })) // PC<KV<String, KV<String, Long>>>
+      .apply(View.asMap());
+
+
 
 
 
