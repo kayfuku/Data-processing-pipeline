@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.usfca.dataflow.jobs1.CountWordsJob;
-import edu.usfca.dataflow.jobs2.PredictionJob;
 
 /**
  * Read the instructions provided in Google Docs, before you begin working on this project.
